@@ -13,41 +13,43 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.*;
 import java.util.stream.Collectors;
 
-public class Crawler {
+public class Crawler extends Thread {
 
-    private CrawlerDao dao = new JdbcCrawlerDao();
+    private CrawlerDao dao;
 
-    public void run() throws SQLException, IOException {
-        String link;
-        while ((link = dao.getNextLinkThenDelete()) != null) {
-            if (dao.isLinkProcessed(link)) {
-                continue;
-            }
-            if (isInterestingLink(link)) {
-                Document doc = httpGetAndParseHtml(link);
-                parseUrlsFromPageAndStoreIntoDatabase(doc);
-                storeIntoDatabaseIfItIsNewsPage(doc, link);
-                dao.updateDatabase(link, "insert into LINKS_ALREADY_PROCESSED (LINK)values ( ? )");
-            }
-        }
+    public Crawler(CrawlerDao dao) {
+        this.dao = dao;
     }
 
-    @SuppressFBWarnings("DMI_CONSTANT_DB_PASSWORD")
-    public static void main(String[] args) throws IOException, SQLException {
-        new Crawler().run();
+    @Override
+    public void run() {
+        try {
+            String link;
+            while ((link = dao.getNextLinkThenDelete()) != null) {
+                if (!dao.isLinkProcessed(link)) {
+                    Document doc = httpGetAndParseHtml(link);
+                    parseUrlsFromPageAndStoreIntoDatabase(doc);
+                    storeIntoDatabaseIfItIsNewsPage(doc, link);
+                    dao.insertProcessedLink(link);
+                }
+
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void parseUrlsFromPageAndStoreIntoDatabase(Document doc) throws SQLException {
         for (Element aTag : doc.select("a")) {
             String href = aTag.attr("href");
-            if (href.startsWith("//")) {
-                href = "https:" + href;
-            }
-            if (!href.toLowerCase().startsWith("javascript")) {
-                dao.updateDatabase(href, "insert into LINKS_TO_BE_PROCESSED (LINK)values ( ? )");
+            if (isInterestingLink(href)) {
+                dao.insertLinkToBeProcessed(href);
             }
         }
     }
@@ -82,18 +84,23 @@ public class Crawler {
     }
 
     private static boolean isInterestingLink(String link) {
-        return (link.contains("news.sina.cn")
-                || link.equals("https://sina.cn")
-                || link.contains("nba.sina.cn")
-                || link.contains("auto.sina.cn")
-                || link.contains("tech.sina.cn")
+        return (link.equals("https://sina.cn") || (isValidUrl(link) && isNewsLink(link)&& !link.contains("passport.sina.cn") ));
+    }
+
+    private static boolean isValidUrl(String link) {
+        try {
+            URL url = new URL(link);
+            url.toURI();
+        } catch (MalformedURLException | URISyntaxException e) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isNewsLink(String link) {
+        return link.contains("news.sina.cn")
                 || link.contains("finance.sina.cn")
                 || link.contains("house.sina.cn")
-                || link.contains("top.sina.cn")
-                || link.contains("cul.sina.cn")
-                || link.contains("edu,.cn")
-                && !link.contains("\\")
-                && !link.contains("passport.sina.cn")
-        );
+                || link.contains("top.sina.cn");
     }
 }

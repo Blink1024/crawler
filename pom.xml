@@ -40,7 +40,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.12.2</version>
+            <version>1.13.1</version>
         </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
@@ -51,6 +51,16 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
             <version>3.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.4</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.19</version>
         </dependency>
     </dependencies>
 
@@ -115,7 +125,7 @@
                 <artifactId>flyway-maven-plugin</artifactId>
                 <version>6.3.1</version>
                 <configuration>
-                    <url>jdbc:h2:file:C:/Users/ZN/IdeaProjects/crawler/news</url>
+                    <url>jdbc:mysql://localhost:3306/news?characterEncoding=utf-8</url>
                     <user>root</user>
                     <password>root</password>
                 </configuration>
