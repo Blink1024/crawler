@@ -27,9 +27,9 @@ public class MyBatisCrawlerDao implements CrawlerDao {
     @Override
     public synchronized String getNextLinkThenDelete() {
         try (SqlSession session = sqlSessionFactory.openSession(true)) {
-            String url = session.selectOne("com.github.blink1024.Mapper.selectNextAvailableLink");
+            String url = session.selectOne("com.github.blink1024.CrawlerMapper.selectNextAvailableLink");
             if (url != null) {
-                session.delete("com.github.blink1024.Mapper.deleteLink", url);
+                session.delete("com.github.blink1024.CrawlerMapper.deleteLink", url);
             }
             return url;
         }
@@ -38,14 +38,14 @@ public class MyBatisCrawlerDao implements CrawlerDao {
     @Override
     public void storeNewsIntoDatabase(String title, String content, String url) {
         try (SqlSession session = sqlSessionFactory.openSession(true)) {
-            session.insert("com.github.blink1024.Mapper.insertNews", new News(title, content, url));
+            session.insert("com.github.blink1024.CrawlerMapper.insertNews", new News(title, content, url));
         }
     }
 
     @Override
     public boolean isLinkProcessed(String link) {
         try (SqlSession session = sqlSessionFactory.openSession(true)) {
-            int count = session.selectOne("com.github.blink1024.Mapper.countLink", link);
+            int count = session.selectOne("com.github.blink1024.CrawlerMapper.countLink", link);
             return count != 0;
         }
     }
@@ -56,7 +56,7 @@ public class MyBatisCrawlerDao implements CrawlerDao {
         param.put("tableName", "LINKS_ALREADY_PROCESSED");
         param.put("link", link);
         try (SqlSession session = sqlSessionFactory.openSession(true)) {
-            session.insert("com.github.blink1024.Mapper.insertLink", param);
+            session.insert("com.github.blink1024.CrawlerMapper.insertLink", param);
         }
     }
 
@@ -66,7 +66,7 @@ public class MyBatisCrawlerDao implements CrawlerDao {
         param.put("tableName", "LINKS_TO_BE_PROCESSED");
         param.put("link", link);
         try (SqlSession session = sqlSessionFactory.openSession(true)) {
-            session.insert("com.github.blink1024.Mapper.insertLink", param);
+            session.insert("com.github.blink1024.CrawlerMapper.insertLink", param);
         }
     }
 }
